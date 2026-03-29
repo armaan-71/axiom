@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import pool from './db.js';
 import ingestRouter from './routes/ingest.js';
+import insightsRouter from './routes/insights.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -10,6 +11,7 @@ app.use(express.json());
 
 // Register routes
 app.use('/api', ingestRouter);
+app.use('/api/insights', insightsRouter);
 
 // List all registered insights
 app.get('/api/insights', async (req: Request, res: Response) => {
