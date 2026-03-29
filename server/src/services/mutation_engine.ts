@@ -1,5 +1,6 @@
 import { Groq } from 'groq-sdk';
 import pool from '../db.js';
+import { io } from '../index.js';
 
 export class MutationEngine {
   private groq: Groq;
@@ -34,6 +35,8 @@ export class MutationEngine {
       const match = similarityRes.rows[0];
       const isMatch = match && match.distance < 0.15;
 
+      let result;
+
       if (!isMatch) {
         // No match found: Create a new insight
         const newInsightRes = await client.query(
@@ -53,7 +56,7 @@ export class MutationEngine {
         );
 
         await client.query('COMMIT');
-        return { action: 'created', insight: newInsightRes.rows[0] };
+        result = { action: 'created', insight: newInsightRes.rows[0] };
       } else {
         // Match found: Determine sentiment via Groq
         const existingInsight = match;
@@ -93,13 +96,18 @@ export class MutationEngine {
         );
 
         await client.query('COMMIT');
-        return { 
+        result = { 
           action: 'updated', 
           insightId: existingInsight.id, 
           sentiment, 
           status 
         };
       }
+
+      // Emit real-time update
+      io.emit('insight_updated', result);
+      return result;
+
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('Mutation Engine Error:', error);
