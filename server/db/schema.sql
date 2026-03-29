@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS insights (
   conflict_count INTEGER DEFAULT 0,
   last_mention TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   status VARCHAR(20) DEFAULT 'verified', -- 'verified', 'contested'
-  embedding vector(1536) -- OpenAI text-embedding-3-small default
+  embedding vector(1024) -- Voyage AI voyage-3 default
 );
 
 -- Evidence table: Supporting or conflicting data for insights
