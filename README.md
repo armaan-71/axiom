@@ -41,23 +41,25 @@ Axiom synthesizes the current state of an insight into actionable business logic
 
 ## 🛠️ Technical Stack
 
-| Component | Technology |
-| :--- | :--- |
-| **Frontend** | React 19 / TypeScript / Tailwind CSS |
-| **Backend** | Node.js (Express) / TypeScript |
-| **Memory Layer** | `mem0` (Fact extraction, deduplication, and stateful updates) |
-| **AI Orchestration** | OpenAI SDK (GPT-4o) (Semantic mapping and Decision Layer synthesis) |
-| **Primary Database** | PostgreSQL (Relational metadata, Study IDs, and the Insight Repository) |
-| **Vector Database** | PGVector (Semantic embeddings for grouping and similarity search) |
-| **Real-time Engine** | WebSockets (Socket.io) (Pushing instant state updates to the dashboard) |
+| Component             | Technology                                                |
+| :-------------------- | :-------------------------------------------------------- |
+| **Frontend**          | React 19 / TypeScript / Tailwind CSS / shadcn/ui          |
+| **Backend**           | Node.js (Express) / TypeScript                            |
+| **Axiom Core**        | Custom Mutation & Extraction logic (Proprietary)          |
+| **LLM Orchestration** | **Groq SDK (Llama-3-70b/3.3-70b)** (High-speed inference) |
+| **Embedding Layer**   | **Voyage AI (voyage-3)** (Cloud-based 1024-dim vectors)   |
+| **Primary Database**  | PostgreSQL (Relational metadata and Insight Repository)   |
+| **Vector Database**   | PGVector (Semantic similarity search `<=>`)               |
+| **Real-time Engine**  | WebSockets (Socket.io) (Pushing instant state updates)    |
 
 ---
 
 ## 💡 Strategic Differentiation
 
-- **Institutional Persistence**: Ensures that every new interview builds upon the previous one, preventing "Research Amnesia."
-- **Operational Efficiency**: Eliminates O(N) re-analysis of old data. Axiom only processes the Delta (new data) against the State (current memory).
-- **Verifiable Evidence**: By replacing vague "AI Scores" with observable Support/Conflict counts and direct Traceability, the system ensures every insight is defensible and audit-ready.
+- **Institutional Persistence**: Every new transcript builds upon the previous one, eradicating "Research Amnesia."
+- **Operational Efficiency**: Processes only the **Delta** (new data) against the **State** (current knowledge), eliminating costly re-analysis.
+- **Verifiable Evidence**: Every insight is hard-linked to its atomic evidence (Ground Truth), making it audit-ready.
+- **Zero-Cost Infrastructure**: Optimized for high-performance cloud operations without any API subscription overhead.
 
 ---
 
@@ -67,31 +69,39 @@ Axiom synthesizes the current state of an insight into actionable business logic
 
 - Node.js (v20+)
 - PostgreSQL with `pgvector` extension
-- OpenAI API Key
+- Groq API Key
+- Voyage AI API Key
 
 ### Installation
 
 1.  **Clone the repository**:
+
     ```bash
-    git clone https://github.com/your-username/axiom.git
+    git clone https://github.com/armaan-71/axiom.git
     cd axiom
     ```
 
 2.  **Install dependencies**:
+
     ```bash
-    npm install
-    # and for client
-    cd client && npm install
+    cd server && npm install
+    cd ../client && npm install
     ```
 
 3.  **Environment Setup**:
-    Create a `.env` file in the root directory:
+    Create a `.env` file in the `server/` directory:
+
     ```env
-    OPENAI_API_KEY=your_api_key
+    GROQ_API_KEY=your_groq_key
+    VOYAGE_API_KEY=your_voyage_key
     DATABASE_URL=postgresql://user:password@localhost:5432/axiom
     ```
 
 4.  **Run the application**:
+    From the root (using two terminals):
     ```bash
-    npm run dev
+    # Terminal 1
+    cd server && npm run dev
+    # Terminal 2
+    cd client && npm run dev
     ```
