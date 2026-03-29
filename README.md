@@ -1,6 +1,6 @@
 # Axiom: Stateful Insight Management Engine
 
-Axiom is a stateful insight management engine designed to transform unstructured research data into a living, evolving **"Knowledge State."** Unlike traditional repositories that function as static archives of transcripts, Axiom treats research findings as mutable data objects. It maintains a persistent ledger of institutional truths, updating their validity, support, and strategic implications in real-time as new data is ingested.
+Axiom is a stateful insight management engine designed to transform unstructured research data into a living, evolving **"Knowledge State."** Unlike traditional repositories that function as static archives of transcripts, Axiom treats research findings as mutable data objects. It maintains a persistent repository of institutional insights, updating their validity, support, and strategic implications in real-time as new data is ingested.
 
 ---
 
@@ -47,7 +47,7 @@ Axiom synthesizes the current state of an insight into actionable business logic
 | **Backend** | Node.js (Express) / TypeScript |
 | **Memory Layer** | `mem0` (Fact extraction, deduplication, and stateful updates) |
 | **AI Orchestration** | OpenAI SDK (GPT-4o) (Semantic mapping and Decision Layer synthesis) |
-| **Primary Database** | PostgreSQL (Relational metadata, Study IDs, and the Insight Ledger) |
+| **Primary Database** | PostgreSQL (Relational metadata, Study IDs, and the Insight Repository) |
 | **Vector Database** | PGVector (Semantic embeddings for grouping and similarity search) |
 | **Real-time Engine** | WebSockets (Socket.io) (Pushing instant state updates to the dashboard) |
 

@@ -32,7 +32,7 @@ export class MemoryService {
 
   /**
    * Main entry point for ingesting unstructured text.
-   * Extracts facts and evolves the insight ledger.
+   * Extracts facts and evolves the insight repository.
    */
   async processText(text: string, sourceUuid: string) {
     try {

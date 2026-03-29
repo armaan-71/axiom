@@ -5,7 +5,7 @@ import { InsightTable } from './components/InsightTable';
 import type { Insight } from './components/InsightTable';
 import { InsightDetailModal } from './components/InsightDetailModal';
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Shield, Activity, Globe, Scale } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 const SOCKET_URL = 'http://localhost:3001';
 
@@ -44,60 +44,22 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 flex flex-col antialiased">
-      {/* Notion-style Header */}
-      <header className="border-b border-slate-100 px-8 py-6 flex items-center justify-between bg-white sticky top-0 z-40">
+      {/* Simplified Header */}
+      <header className="border-b border-slate-100 px-8 py-4 flex items-center justify-between bg-white sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-950 rounded-lg flex items-center justify-center shadow-lg">
-            <Shield className="text-white w-6 h-6" />
+          <div className="w-8 h-8 bg-slate-950 rounded flex items-center justify-center shadow-sm">
+            <Shield className="text-white w-5 h-5" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Axiom Truth Ledger</h1>
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">
-              <Activity className="w-3 h-3 text-green-500" />
-              <span>Engine Status: Live</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Verified State</span>
-            <span className="text-sm font-mono font-bold text-slate-800">
-              {insights.filter(i => i.status === 'verified').length}
-            </span>
-          </div>
-          <div className="w-px h-8 bg-slate-100" />
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Contested</span>
-            <span className="text-sm font-mono font-bold text-amber-600">
-              {insights.filter(i => i.status === 'contested').length}
-            </span>
-          </div>
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">Axiom</h1>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col">
-          <div className="px-8 pt-10 pb-6 flex items-end justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Globe className="w-4 h-4 text-slate-400" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Knowledge Graph v1.4</span>
-              </div>
-              <h2 className="text-4xl font-black text-slate-900">State of Truth</h2>
-              <p className="text-slate-500 mt-2 max-w-xl leading-relaxed">
-                The living ledger of validated insights. Each entry is synthesized across multiple evidence vectors to maintain an objective reality.
-              </p>
-            </div>
-            
-            <div className="bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl flex items-center gap-4">
-               <div className="flex items-center gap-2">
-                 <Scale className="w-4 h-4 text-blue-500" />
-                 <span className="text-sm font-bold text-slate-700">Equilibrium Index</span>
-               </div>
-               <div className="text-lg font-mono font-black text-blue-600">
-                 0.92
-               </div>
-            </div>
+          <div className="px-8 pt-10 pb-6">
+            <h1 className="text-3xl font-bold text-slate-900">Research Insights</h1>
+            <p className="text-slate-500 mt-2 max-w-xl leading-relaxed">
+              The repository of validated insights synthesized from research evidence.
+            </p>
           </div>
 
           <ScrollArea className="flex-1 px-8">
