@@ -1,77 +1,22 @@
 import 'dotenv/config';
-import { Memory } from 'mem0ai/oss';
 import axios from 'axios';
 import pool from '../db.js';
-import pg from 'pg';
-import { URL } from 'url';
-
-// GLOBAL MONKEY PATCH: Prevent "Client has already been connected" and "Connection terminated"
-const originalConnect = pg.Client.prototype.connect;
-pg.Client.prototype.connect = async function(callback?: (err: Error) => void) {
-  if ((this as any)._connected || (this as any)._connecting) {
-    if (callback) callback(null as any);
-    return Promise.resolve();
-  }
-  return originalConnect.apply(this, [callback as any]);
-};
+import { mutationEngine } from './mutation_engine.js';
+import { Groq } from 'groq-sdk';
 
 export class MemoryService {
-  private memory: Memory;
   private embeddingCache: Map<string, number[]> = new Map();
   private lastCallTime: number = 0;
   private voyageQueue: Promise<void> = Promise.resolve();
+  private groq: Groq;
 
   constructor() {
-    const dbUrl = new URL(process.env.DATABASE_URL!);
-    const dbConfig = {
-      user: dbUrl.username,
-      password: decodeURIComponent(dbUrl.password),
-      host: dbUrl.hostname,
-      port: parseInt(dbUrl.port || '5432'),
-      dbname: dbUrl.pathname.slice(1) || 'postgres',
-    };
-
-    this.memory = new Memory({
-      llm: {
-        provider: 'groq',
-        config: {
-          model: 'llama-3.3-70b-versatile',
-          apiKey: process.env.GROQ_API_KEY,
-        },
-      },
-      embedder: {
-        provider: 'openai',
-        config: {
-          apiKey: process.env.VOYAGE_API_KEY,
-          baseURL: 'https://api.voyageai.com/v1',
-          model: 'voyage-code-3',
-        },
-      },
-      vectorStore: {
-        provider: 'pgvector',
-        config: {
-          ...dbConfig,
-          collectionName: 'memories',
-          embeddingModelDims: 1024,
-        },
-      },
-      customPrompt: "Extract facts from the text as independent, short claims. Focus on technical features and project names. Return ONLY the claims.",
+    this.groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
     });
-
-    // REUSE CACHE AND ENFORCE 3 RPM LIMIT SEQUENTIALLY
-    (this.memory as any).embedder = {
-      embed: async (text: string) => this.queuedVoyageCall(text),
-      embedBatch: async (texts: string[]) => {
-        const results = [];
-        for (const text of texts) {
-          results.push(await this.queuedVoyageCall(text));
-        }
-        return results;
-      },
-    };
   }
 
-  // Sequential execution and mandatory 20s cooldown between any two calls
+  // Sequential execution and mandatory 20s cooldown between any two calls to stay within Voyage AI free tier (3 RPM)
   private async queuedVoyageCall(text: string): Promise<number[]> {
     return new Promise((resolve, reject) => {
       this.voyageQueue = this.voyageQueue.then(async () => {
@@ -85,26 +30,83 @@ export class MemoryService {
     });
   }
 
+  /**
+   * Main entry point for ingesting unstructured text.
+   * Extracts facts and evolves the insight ledger.
+   */
   async processText(text: string, sourceUuid: string) {
     try {
-      console.log('--- Starting Resilient Ingestion ---');
-      const result = await this.memory.add(text, { userId: 'system_extractor' });
-      console.log('mem0 result:', JSON.stringify(result, null, 2));
+      console.log('--- Starting Axiom Core Extraction ---');
+      
+      // 1. Extract Atomic Facts via Groq (Llama-3)
+      const facts = await this.extractFacts(text);
+      console.log('Extracted Facts:', facts);
 
-      const facts = result.results.map((item: any) => item.memory);
-      if (facts.length === 0) return { message: 'No facts extracted.', facts: [] };
+      if (facts.length === 0) return { message: 'No insights extracted.', results: [] };
 
-      const processedFacts = [];
+      // 2. Process each fact through the Mutation Engine
+      const processedResults = [];
       for (const fact of facts) {
-        const embedding = await this.getVoyageEmbedding(fact);
-        const insight = await this.storeInsight(fact, embedding, sourceUuid);
-        processedFacts.push(insight);
+        // Enforce sequential embedding calls to respect rate limits
+        const embedding = await this.queuedVoyageCall(fact);
+        const mutationResult = await mutationEngine.mutate(fact, embedding, sourceUuid);
+        processedResults.push({ fact, mutation: mutationResult });
       }
 
-      return { message: 'Processing complete', facts: processedFacts };
+      return { 
+        message: 'Processing complete', 
+        insights_count: facts.length,
+        results: processedResults 
+      };
     } catch (error: any) {
       console.error('In MemoryService.processText:', error.message || error);
       throw error;
+    }
+  }
+
+  private async extractFacts(text: string): Promise<string[]> {
+    const prompt = `
+      You are a Research Data Analyst. Your task is to extract atomic research insights from a transcript.
+      An "Atomic Insight" is a short, independent claim about a technical feature, user behavior, or pain point.
+      
+      Instructions:
+      - Break the text into individual claims.
+      - Each claim must be a complete, stand-alone sentence.
+      - Do NOT include filler words or conversational context.
+      - Return the output as a JSON array of strings.
+      
+      Example Input: "The users were saying that the dashboard is too slow, but they really like the new dark mode toggle."
+      Example Output: ["The dashboard is too slow.", "Users like the new dark mode toggle."]
+      
+      Input Text: "${text}"
+      
+      Output (JSON Array):`;
+
+    const response = await this.groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.1,
+      response_format: { type: 'json_object' }
+    });
+
+    const content = response.choices[0]?.message?.content || '{}';
+    try {
+      // The model might return {"insights": [...]} or just the array.
+      // Since I asked for a JSON object with response_format, I should ensure it's structured.
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed.insights && Array.isArray(parsed.insights)) return parsed.insights;
+      if (parsed.facts && Array.isArray(parsed.facts)) return parsed.facts;
+      
+      // Fallback: search for any array values
+      for (const key in parsed) {
+        if (Array.isArray(parsed[key])) return parsed[key];
+      }
+      
+      return [];
+    } catch (e) {
+      console.error('Failed to parse Groq extraction result:', content);
+      return [];
     }
   }
 
@@ -116,7 +118,7 @@ export class MemoryService {
     const timeSinceLastCall = now - this.lastCallTime;
     if (timeSinceLastCall < 20000) {
       const waitTime = 20000 - timeSinceLastCall;
-      console.log(`Cooling down... waiting ${Math.ceil(waitTime/1000)}s to stay within 3 RPM.`);
+      console.log(`Cooling down embeddings... waiting ${Math.ceil(waitTime/1000)}s.`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
 
@@ -133,38 +135,11 @@ export class MemoryService {
       return embedding;
     } catch (err: any) {
       if (err.response?.status === 429 && attempt < 3) {
-        console.warn(`Rate limit hit despite cooldown. Waiting 30s and retrying...`);
+        console.warn(`Rate limit hit. Waiting 30s...`);
         await new Promise(resolve => setTimeout(resolve, 30000));
         return this.getVoyageEmbedding(text, attempt + 1);
       }
       throw err;
-    }
-  }
-
-  private async storeInsight(claim: string, embedding: number[], sourceUuid: string) {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const insightRes = await client.query(
-        `INSERT INTO insights (claim, embedding, support_count, last_mention)
-         VALUES ($1, $2, 1, NOW())
-         ON CONFLICT (claim) DO UPDATE SET 
-           support_count = insights.support_count + 1,
-           last_mention = NOW(),
-           embedding = EXCLUDED.embedding
-         RETURNING id, claim`,
-        [claim, `[${embedding.join(',')}]`]
-      );
-      const insightId = insightRes.rows[0].id;
-      await client.query(
-        `INSERT INTO evidence (insight_id, type, content, source_uuid)
-         VALUES ($1, 'support', $2, $3)`,
-        [insightId, claim, sourceUuid]
-      );
-      await client.query('COMMIT');
-      return insightRes.rows[0];
-    } finally {
-      client.release();
     }
   }
 }
