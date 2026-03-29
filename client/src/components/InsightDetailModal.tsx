@@ -56,13 +56,13 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insightI
         <DialogHeader className="p-8 pb-4">
           <div className="flex items-center gap-2 mb-2 text-slate-400">
             <ShieldCheck className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">Synthesis Layer</span>
+            <span className="text-xs font-bold uppercase tracking-widest">Insight Synthesis</span>
           </div>
           <DialogTitle className="text-2xl font-bold text-slate-900 leading-tight">
             {insightClaim}
           </DialogTitle>
           <DialogDescription className="text-slate-500 mt-2">
-            Axiom Engine analysis of real-time truthful state and strategic implications.
+            Analysis of research insights and strategic implications.
           </DialogDescription>
         </DialogHeader>
 
@@ -70,7 +70,7 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insightI
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-              <p className="text-slate-400 font-medium animate-pulse">Synthesizing Decision Stack...</p>
+              <p className="text-slate-400 font-medium animate-pulse">Analyzing Insight...</p>
             </div>
           ) : decision ? (
             <div className="space-y-6">
@@ -101,7 +101,7 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insightI
               </div>
 
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="text-sm font-semibold text-slate-600">Synthesis Confidence Score</span>
+                <span className="text-sm font-semibold text-slate-600">Confidence Score</span>
                 <Badge className="bg-white border-slate-200 text-slate-900 hover:bg-white px-3 py-1 font-mono text-base">
                   {decision.confidence.toFixed(0)}%
                 </Badge>
@@ -110,7 +110,7 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insightI
               {/* Traceable Evidence Section */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <div className="flex items-center gap-2 text-slate-900">
-                  <h3 className="text-sm font-bold uppercase tracking-wider">Traceable Evidence</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider">Evidence Base</h3>
                   <span className="text-xs text-slate-400 font-normal">({decision.evidence.length} points)</span>
                 </div>
                 
@@ -159,7 +159,7 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insightI
             onClick={onClose}
             className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-wider"
           >
-            Close Synthesis
+            Close Analysis
           </button>
         </div>
       </DialogContent>
