@@ -11,11 +11,20 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Loader2, Lightbulb, TrendingUp, ShieldCheck } from 'lucide-react';
 import axios from 'axios';
+import { formatDistanceToNow } from 'date-fns';
+
+interface Evidence {
+  type: 'support' | 'conflict';
+  content: string;
+  source_uuid: string;
+  created_at: string;
+}
 
 interface Decision {
   implication: string;
   recommended_action: string;
   confidence: number;
+  evidence: Evidence[];
 }
 
 interface InsightDetailModalProps {
@@ -96,6 +105,46 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insightI
                 <Badge className="bg-white border-slate-200 text-slate-900 hover:bg-white px-3 py-1 font-mono text-base">
                   {decision.confidence.toFixed(0)}%
                 </Badge>
+              </div>
+
+              {/* Traceable Evidence Section */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-slate-900">
+                  <h3 className="text-sm font-bold uppercase tracking-wider">Traceable Evidence</h3>
+                  <span className="text-xs text-slate-400 font-normal">({decision.evidence.length} points)</span>
+                </div>
+                
+                <div className="space-y-3">
+                  {decision.evidence.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className="group p-4 rounded-lg bg-white border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <div className="flex items-center gap-2">
+                          {item.type === 'support' ? (
+                            <Badge className="bg-green-50 text-green-700 border-green-100 hover:bg-green-50 px-2 py-0 text-[10px] font-bold uppercase">
+                              ✅ Support
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-50 text-red-700 border-red-100 hover:bg-red-50 px-2 py-0 text-[10px] font-bold uppercase">
+                              ❌ Conflict
+                            </Badge>
+                          )}
+                          <span className="text-[10px] font-mono text-slate-400 group-hover:text-slate-600 transition-colors">
+                            src: {item.source_uuid.slice(0, 8)}...
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap">
+                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600 leading-relaxed italic">
+                        "{item.content}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
