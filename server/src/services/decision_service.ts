@@ -64,7 +64,17 @@ Output ONLY as a JSON object: { "implication": "...", "suggested_action": "...",
       });
 
       const content = response.choices[0]?.message?.content || '{}';
-      return JSON.parse(content);
+      const synthesis = JSON.parse(content);
+
+      return {
+        ...synthesis,
+        evidence: evidence.map((e: any) => ({
+          type: e.type,
+          content: e.content,
+          source_uuid: e.source_uuid,
+          created_at: e.created_at
+        }))
+      };
 
     } catch (error: any) {
       console.error('In DecisionService.getDecision:', error.message || error);
